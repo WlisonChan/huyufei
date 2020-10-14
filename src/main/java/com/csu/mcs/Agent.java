@@ -2,7 +2,9 @@ package com.csu.mcs;
 
 import com.csu.kmeans.Point;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Agent {
@@ -17,6 +19,8 @@ public class Agent {
     private double pay;
     // complete task set
     private Set<Point> taskSet;
+    // record the task seq
+    private List<List<Point>> taskSeq;
 
     // current location of participant
     private float x;
@@ -26,6 +30,7 @@ public class Agent {
         this.x = x;
         this.y = y;
         this.taskSet = new HashSet<>();
+        this.taskSeq = new ArrayList<>();
     }
 
     // The cost of performing the target task
@@ -54,6 +59,14 @@ public class Agent {
                 ", x=" + x +
                 ", y=" + y +
                 '}';
+    }
+
+    public List<List<Point>> getTaskSeq() {
+        return taskSeq;
+    }
+
+    public void setTaskSeq(List<List<Point>> taskSeq) {
+        this.taskSeq = taskSeq;
     }
 
     public Set<Point> getTaskSet() {

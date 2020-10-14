@@ -8,6 +8,7 @@ import com.csu.kmeans.Point;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -36,10 +37,15 @@ public class Main {
     public static final double CYCLE = 200;
     // 控制边际增长递减效应的一个因素
     public static final double LAMBDA = 0.2;
+
     // kmeans - k
     public static final int KMEANS_K = 5;
     // kmeans - type, the calculation distance formula type.
     public static final int KMEANS_TYPE = 1;
+
+    // GeneticAlgorithm parameter
+    // Initial population number
+    public static final int INIT_NUM = 1000;
 
     public static void main(String[] args) throws IOException {
         for (int i = 0; i < 20; i++) {
@@ -47,8 +53,9 @@ public class Main {
             List<Point> points = kMeansForTasks();
             // 初始化参与者坐标
             List<Agent> agents = initAgents();
-            baselineAlgorithm(points, agents);
+            //baselineAlgorithm(points, agents);
             System.out.println();
+            geneticAlgorithm(points,agents);
         }
     }
 
@@ -296,6 +303,102 @@ public class Main {
      * @param agents
      */
     public static void geneticAlgorithm(List<Point> tasks, List<Agent> agents){
+        // copy data to run
+        List<Point> taskList = new ArrayList<>(tasks);
+        List<Agent> agentList = new ArrayList<>(agents);
+
+        // parameter init
+        double budget = BUDGET;
+        double moveLimit = MOVE_LIMIT;
+        double cycle = CYCLE;
+        double reward = REWARD;
+
+        // init taskList reward
+        for (int i = 0; i < taskList.size(); i++) {
+            Point point = taskList.get(i);
+            point.setReward(reward);
+        }
+
+        // init 1000 route
+        Random random = new Random();
+        for (int i = 0; i < INIT_NUM; i++) {
+            Agent agent = agentList.get(i % WORKER_NUM);
+            // route plan
+            List<Point> temp = new ArrayList<>();
+            for (int j = 0; j < taskList.size(); j++) {
+                if (random.nextBoolean()) {
+                    continue;
+                }
+                temp.add(taskList.get(j));
+            }
+            // shuffle the list
+            Collections.shuffle(temp);
+            agent.getTaskSeq().add(temp);
+        }
+        handleRestrain(agentList,moveLimit,budget);
+        partialMappedCrossover(agents,moveLimit);
+    }
+
+    /**
+     * handleRestrain
+     * @param agents
+     * @param moveLimit
+     */
+    public static void handleRestrain(List<Agent> agents,double moveLimit,double budget){
+        for (int i = 0; i < agents.size(); i++) {
+            Agent agent = agents.get(i);
+            List<List<Point>> taskSeq = agent.getTaskSeq();
+            for (int j = 0; j < taskSeq.size(); j++) {
+                List<Point> route = taskSeq.get(j);
+                agent.getTaskSeq().set(j,routeTailHandle(agent,route,moveLimit,budget));
+            }
+        }
+    }
+
+    public static List<Point> routeTailHandle(Agent agent,List<Point> route,double moveLimit,double budget){
+        double runDistance = 0;
+        for (int i = 0; i < route.size(); i++) {
+            Point task = route.get(i);
+            double d = agent.getDistance(task);
+            if (runDistance+d<moveLimit){
+                runDistance+=d;
+            }else {
+                return route.subList(0,i);
+            }
+        }
+        return route;
+    }
+
+    public static void partialMappedCrossover(List<Agent> agents,double moveLimit){
+        for (int i = 0; i < agents.size(); i++) {
+            Agent agent = agents.get(i);
+            List<List<Point>> taskSeq = agent.getTaskSeq();
+            for (int j = 0; j < taskSeq.size(); j++) {
+                for (int k = j+1; k < taskSeq.size(); k++) {
+                    // crossover
+                    List<Point> child = crossover(taskSeq.get(j), taskSeq.get(k));
+                    child = routeTailHandle(agent, child, moveLimit,BUDGET);
+                    agent.getTaskSeq().add(child);
+                }
+            }
+        }
+    }
+
+    public static List<Point> crossover(List<Point> taskPar, List<Point> taskPar2){
+        Random random = new Random();
+        List<Point> res = new ArrayList<>();
+        int size = taskPar.size() > taskPar2.size() ? taskPar2.size() : taskPar.size();
+        for (int i = 0; i < size; i++) {
+            if (random.nextBoolean()) {
+                res.add(taskPar.get(i));
+            }else {
+                res.add(taskPar2.get(i));
+            }
+        }
+        return res;
+    }
+
+    public static void screenMaxVal(List<Agent> agents){
 
     }
 
