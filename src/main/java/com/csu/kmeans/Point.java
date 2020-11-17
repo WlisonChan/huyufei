@@ -18,6 +18,7 @@ public class Point {
     public Point(Float x, Float y) {
         this.x = x;
         this.y = y;
+        this.times = 0;
     }
 
     public double getDistance() {
